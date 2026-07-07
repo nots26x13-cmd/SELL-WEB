@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Log in · S26X CODEX SHOP</title>
+<link rel="stylesheet" href="css/style.css" />
+<style>
+  .auth-shell { padding: 48px 20px 24px; }
+  .auth-brand { font-family: var(--font-display); font-weight:800; font-size:22px; color:var(--primary); text-align:center; margin-bottom:6px; }
+  .auth-brand small { display:block; font-size:12px; font-weight:600; letter-spacing:2px; color:var(--text-muted); }
+  .auth-card { background:var(--surface); border-radius:var(--radius-lg); box-shadow:var(--shadow-card); padding:24px 20px; margin-top:22px; }
+  .auth-title { font-family:var(--font-display); font-size:19px; font-weight:700; margin:0 0 4px; }
+  .auth-subtitle { color:var(--text-muted); font-size:13px; margin:0 0 18px; }
+  .auth-error { color:var(--danger); font-weight:600; font-size:13px; min-height:18px; margin-top:4px; }
+  .auth-switch { text-align:center; font-size:14px; color:var(--text-muted); margin-top:18px; }
+  .auth-switch a { color:var(--primary); font-weight:700; text-decoration:none; }
+</style>
+</head>
+<body>
+<div class="app-shell auth-shell">
+
+  <div class="auth-brand">S26X CODEX SHOP<small>TOP-UP STORE</small></div>
+
+  <div class="auth-card">
+    <h1 class="auth-title">Welcome back</h1>
+    <p class="auth-subtitle">Log in to see your wallet, orders and top-ups.</p>
+
+    <div class="field-label">Email</div>
+    <input class="text-input" id="email" type="email" placeholder="you@example.com" autocomplete="email" />
+
+    <div class="field-label">Password</div>
+    <input class="text-input" id="password" type="password" placeholder="••••••••" autocomplete="current-password" />
+
+    <div class="auth-error" id="formError"></div>
+
+    <button class="btn-primary" id="loginBtn">Log in</button>
+  </div>
+
+  <div class="auth-switch">Don't have an account? <a href="signup.html">Sign up</a></div>
+</div>
+
+<script>window.S26X_API_BASE_URL = "";</script>
+<script src="js/api.js"></script>
+<script>
+  const redirect = qs("redirect") || "index.html";
+  const errorEl = document.getElementById("formError");
+  const btn = document.getElementById("loginBtn");
+
+  async function doLogin() {
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+    errorEl.textContent = "";
+
+    if (!email || !password) {
+      errorEl.textContent = "Enter your email and password.";
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = "Logging in…";
+    try {
+      await Api.login(email, password);
+      window.location.href = redirect;
+    } catch (err) {
+      errorEl.textContent = err.message || "Could not log in. Try again.";
+      btn.disabled = false;
+      btn.textContent = "Log in";
+    }
+  }
+
+  btn.addEventListener("click", doLogin);
+  document.getElementById("password").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") doLogin();
+  });
+</script>
+</body>
+</html>

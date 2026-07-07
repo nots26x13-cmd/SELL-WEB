@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>My Orders · S26X CODEX SHOP</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div class="app-shell">
+
+  <header class="app-header">
+    <div class="brand">S26X<br /><small>CODEX SHOP</small></div>
+    <div class="header-actions">
+      <a href="wallet.html" class="wallet-pill" id="walletPill">৳0</a>
+      <a href="account.html" class="avatar">A</a>
+    </div>
+  </header>
+
+  <div class="section-title"><h2>My orders history</h2></div>
+  <div id="ordersList"></div>
+
+  <nav class="bottom-nav">
+    <a href="index.html">🏠<span>Home</span></a>
+    <a href="topup.html">📶<span>Topup</span></a>
+    <a href="orders.html" class="active">🧾<span>Orders</span></a>
+    <a href="account.html">👤<span>Account</span></a>
+  </nav>
+</div>
+
+<script>window.S26X_API_BASE_URL = "";</script>
+<script src="js/api.js"></script>
+<script>
+  async function load() {
+    const userId = (await getCurrentUserId());
+    const [bal, orders] = await Promise.all([Api.getBalance(userId), Api.listMyOrders(userId)]);
+    document.getElementById("walletPill").textContent = bdt(bal.wallet_balance);
+
+    const listEl = document.getElementById("ordersList");
+    if (!orders.length) {
+      listEl.innerHTML = `
+        <div class="empty-state">
+          <div class="icon">🧾</div>
+          <h3>No orders found!</h3>
+          <a href="topup.html">Order now</a>
+        </div>`;
+      return;
+    }
+    listEl.innerHTML = `<div style="padding:0 18px;">` + orders
+      .sort((a, b) => (b.created_at || "").localeCompare(a.created_at || ""))
+      .map(o => `
+        <div style="background:var(--surface); border-radius:var(--radius-md); box-shadow:var(--shadow-card);
+                    padding:14px 16px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <div style="font-weight:700; font-size:14px;">${o.product_name}</div>
+            <div style="font-size:12px; color:var(--text-muted);">${o.package_label} · UID ${o.player_uid}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-weight:700;">${bdt(o.price_bdt)}</div>
+            <span class="status-tag ${statusClass(o.status)}">${o.status.replace(/_/g, " ")}</span>
+          </div>
+        </div>
+      `).join("") + `</div>`;
+  }
+
+  function statusClass(status) {
+    if (status === "fulfilled") return "fulfilled";
+    if (status === "rejected" || status === "failed_to_queue") return "rejected";
+    return "pending";
+  }
+
+  load();
+</script>
+</body>
+</html>

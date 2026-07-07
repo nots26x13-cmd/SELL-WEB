@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Choose Package · S26X CODEX SHOP</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div class="app-shell">
+
+  <header class="app-header">
+    <div class="brand">S26X<br /><small>CODEX SHOP</small></div>
+    <div class="header-actions">
+      <a href="wallet.html" class="wallet-pill" id="walletPill">৳0</a>
+      <a href="account.html" class="avatar">A</a>
+    </div>
+  </header>
+
+  <div class="package-header">
+    <div style="width:56px;height:56px;border-radius:12px;background:var(--primary-light);
+                display:flex;align-items:center;justify-content:center;font-size:26px;">🎮</div>
+    <div>
+      <h1 id="productName">Loading…</h1>
+      <span class="tag-pill" id="productTag">UID TOPUP</span>
+    </div>
+  </div>
+
+  <div class="section-title"><h2>Choose package</h2></div>
+  <div class="package-grid" id="packageGrid"></div>
+
+  <div class="field-label">Player ID / UID</div>
+  <input class="text-input" id="uidInput" placeholder="Enter your Free Fire UID" inputmode="numeric" />
+  <button class="btn-secondary" id="checkNicknameBtn">🔍 Check nickname</button>
+  <div id="nicknameResult" style="padding:0 18px 10px; font-weight:700;"></div>
+
+  <button class="btn-primary" id="continueBtn" disabled>Continue</button>
+
+  <nav class="bottom-nav">
+    <a href="index.html">🏠<span>Home</span></a>
+    <a href="topup.html" class="active">📶<span>Topup</span></a>
+    <a href="orders.html">🧾<span>Orders</span></a>
+    <a href="account.html">👤<span>Account</span></a>
+  </nav>
+</div>
+
+<script>window.S26X_API_BASE_URL = "";</script>
+<script src="js/api.js"></script>
+<script>
+  let selectedProduct = null;
+  let selectedPackage = null;
+
+  async function load() {
+    const productId = qs("product");
+    const balance = await Api.getBalance((await getCurrentUserId()));
+    document.getElementById("walletPill").textContent = bdt(balance.wallet_balance);
+
+    if (!productId) {
+      document.getElementById("productName").textContent = "No product selected";
+      return;
+    }
+    selectedProduct = await Api.getProduct(productId);
+    document.getElementById("productName").textContent = selectedProduct.name;
+    document.getElementById("productTag").textContent = selectedProduct.subtitle || "TOPUP";
+    renderPackages();
+  }
+
+  function renderPackages() {
+    const grid = document.getElementById("packageGrid");
+    grid.innerHTML = selectedProduct.packages.map((pkg, i) => `
+      <button class="package-card ${i % 2 ? 'alt' : ''} ${pkg.in_stock ? '' : 'out-of-stock'}"
+              data-id="${pkg.id}" onclick="selectPackage('${pkg.id}')">
+        ${pkg.in_stock ? '<span class="dot"></span>' : '<span class="stock-badge">Stock out</span>'}
+        <div class="desc">${pkg.label}</div>
+        <div class="price">৳${pkg.price_bdt}</div>
+      </button>
+    `).join("");
+  }
+
+  function selectPackage(pkgId) {
+    selectedPackage = selectedProduct.packages.find(p => p.id === pkgId);
+    document.querySelectorAll(".package-card").forEach(el =>
+      el.classList.toggle("selected", el.dataset.id === pkgId));
+    updateContinueState();
+  }
+
+  function updateContinueState() {
+    const uid = document.getElementById("uidInput").value.trim();
+    document.getElementById("continueBtn").disabled = !(selectedPackage && (!selectedProduct.requires_uid || uid));
+  }
+
+  document.getElementById("uidInput").addEventListener("input", updateContinueState);
+
+  document.getElementById("checkNicknameBtn").addEventListener("click", async () => {
+    const uid = document.getElementById("uidInput").value.trim();
+    const resultEl = document.getElementById("nicknameResult");
+    if (!uid) { resultEl.textContent = "Enter a UID first"; return; }
+    resultEl.textContent = "Checking…";
+    try {
+      const res = await Api.checkNickname(uid);
+      resultEl.textContent = res.success && res.nickname ? `👤 ${res.nickname}` : "Nickname not found";
+      resultEl.style.color = res.success ? "var(--success)" : "var(--danger)";
+    } catch (err) {
+      resultEl.textContent = "Lookup failed, you can still continue";
+      resultEl.style.color = "var(--text-muted)";
+    }
+  });
+
+  document.getElementById("continueBtn").addEventListener("click", () => {
+    const uid = document.getElementById("uidInput").value.trim();
+    const url = `checkout.html?product=${selectedProduct.id}&package=${selectedPackage.id}&uid=${encodeURIComponent(uid)}`;
+    window.location.href = url;
+  });
+
+  load();
+</script>
+</body>
+</html>

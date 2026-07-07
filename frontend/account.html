@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Account · S26X CODEX SHOP</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div class="app-shell">
+
+  <header class="app-header">
+    <div class="brand">S26X<br /><small>CODEX SHOP</small></div>
+    <div class="header-actions">
+      <a href="wallet.html" class="wallet-pill" id="walletPill">৳0</a>
+      <a href="account.html" class="avatar">A</a>
+    </div>
+  </header>
+
+  <div id="authBanner" style="display:none; padding:0 18px 4px;"></div>
+
+  <div class="tile-grid">
+    <a href="orders.html" class="tile"><div class="tile-icon" style="background:#EAF1FF;">🧾</div><div class="tile-label">My Orders</div></a>
+    <a href="#" class="tile"><div class="tile-icon" style="background:#E7F9F0;">📋</div><div class="tile-label">Transactions</div></a>
+    <a href="#" class="tile"><div class="tile-icon" style="background:#F3EAFE;">👑</div><div class="tile-label">Memberships</div></a>
+    <a href="#" class="tile"><div class="tile-icon" style="background:#FFF6E0;">🔔</div><div class="tile-label">Messages</div></a>
+    <a href="#" class="tile active-tile"><div class="tile-icon" style="background:#EEE9FF;">🎁</div><div class="tile-label">Redeem Code</div></a>
+    <a href="wallet.html" class="tile"><div class="tile-icon" style="background:#FDEAEA;">➕</div><div class="tile-label">Add Fund</div></a>
+    <div class="tile"><div class="tile-value" id="tileBalance">৳0</div><div class="tile-label">Available</div></div>
+    <div class="tile"><div class="tile-value" id="tileOrders">0</div><div class="tile-label">Orders</div></div>
+    <div class="tile"><div class="tile-value" id="tileSpent">৳0</div><div class="tile-label">Spent</div></div>
+  </div>
+
+  <nav class="bottom-nav">
+    <a href="index.html">🏠<span>Home</span></a>
+    <a href="topup.html">📶<span>Topup</span></a>
+    <a href="orders.html">🧾<span>Orders</span></a>
+    <a href="account.html" class="active">👤<span>Account</span></a>
+  </nav>
+</div>
+
+<script>window.S26X_API_BASE_URL = "";</script>
+<script src="js/api.js"></script>
+<script>
+  async function load() {
+    const userId = (await getCurrentUserId());
+    const isTelegram = !!(window.Telegram && window.Telegram.WebApp &&
+      window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user);
+    const banner = document.getElementById("authBanner");
+
+    if (isTelegram) {
+      banner.style.display = "none";
+    } else if (typeof _sessionUser !== "undefined" && _sessionUser) {
+      banner.style.display = "block";
+      banner.innerHTML = `
+        <div class="summary-box">
+          <div style="font-weight:700;">${_sessionUser.name}</div>
+          <div style="font-size:13px; color:var(--text-muted);">${_sessionUser.email}</div>
+          <button class="btn-primary" id="logoutBtn" style="margin-top:12px;">Log out</button>
+        </div>`;
+      document.getElementById("logoutBtn").addEventListener("click", async () => {
+        await Api.logout();
+        window.location.href = "login.html";
+      });
+    } else {
+      banner.style.display = "block";
+      banner.innerHTML = `
+        <div class="summary-box">
+          <div style="font-weight:700; margin-bottom:6px;">You're browsing as a guest</div>
+          <div style="font-size:13px; color:var(--text-muted); margin-bottom:12px;">
+            Log in to keep your orders and wallet saved to your account.
+          </div>
+          <a href="login.html" class="btn-primary" style="display:block; text-align:center; text-decoration:none;">Log in</a>
+          <a href="signup.html" style="display:block; text-align:center; margin-top:10px; color:var(--primary); font-weight:700; text-decoration:none;">Sign up</a>
+        </div>`;
+    }
+
+    const [bal, orders] = await Promise.all([Api.getBalance(userId), Api.listMyOrders(userId)]);
+    document.getElementById("walletPill").textContent = bdt(bal.wallet_balance);
+    document.getElementById("tileBalance").textContent = bdt(bal.wallet_balance);
+    document.getElementById("tileOrders").textContent = orders.length;
+    document.getElementById("tileSpent").textContent =
+      bdt(orders.reduce((sum, o) => sum + (o.price_bdt || 0), 0));
+  }
+  load();
+</script>
+</body>
+</html>

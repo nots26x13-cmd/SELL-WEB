@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>S26X CODEX SHOP</title>
+<link rel="stylesheet" href="css/style.css" />
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+<div class="app-shell">
+
+  <header class="app-header">
+    <div class="brand">S26X<br /><small>CODEX SHOP</small></div>
+    <div class="header-actions">
+      <a href="wallet.html" class="wallet-pill" id="walletPill">৳0</a>
+      <a href="#" class="icon-btn" title="Notifications">🔔</a>
+      <a href="account.html" class="avatar" id="avatarInitial">A</a>
+    </div>
+  </header>
+
+  <div class="hero-banner">
+    <div style="background:linear-gradient(120deg, var(--primary), #9B5DE5 60%, var(--accent-teal));
+                padding:34px 20px; color:#fff; font-family:var(--font-display);">
+      <div style="font-size:12px; opacity:.85; margin-bottom:6px;">HOW TO ORDER</div>
+      <div style="font-size:18px; font-weight:700; max-width:220px;">
+        Watch a 60-second guide before your first top-up
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">
+    <h2>Special</h2>
+    <a href="topup.html">View all</a>
+  </div>
+  <div class="product-grid" id="productGrid">
+    <!-- product cards render here -->
+  </div>
+
+  <nav class="bottom-nav">
+    <a href="index.html" class="active">🏠<span>Home</span></a>
+    <a href="topup.html">📶<span>Topup</span></a>
+    <a href="orders.html">🧾<span>Orders</span></a>
+    <a href="account.html">👤<span>Account</span></a>
+  </nav>
+</div>
+
+<script>window.S26X_API_BASE_URL = "";</script>
+<script src="js/api.js"></script>
+<script>
+  (function init() {
+    if (window.Telegram?.WebApp) window.Telegram.WebApp.ready();
+    document.getElementById("avatarInitial").textContent =
+      (localStorage.getItem("ac_display_name") || "A")[0].toUpperCase();
+  })();
+
+  async function loadHomeProducts() {
+    const grid = document.getElementById("productGrid");
+    try {
+      const products = await Api.listProducts();
+      const balance = await Api.getBalance((await getCurrentUserId()));
+      document.getElementById("walletPill").textContent = bdt(balance.wallet_balance);
+
+      if (!products.length) {
+        grid.innerHTML = `<p style="color:var(--text-muted); padding:0 8px;">No products yet - add some from the admin panel.</p>`;
+        return;
+      }
+      grid.innerHTML = products.map(p => `
+        <a class="product-card" href="topup.html?product=${p.id}">
+          <div style="aspect-ratio:1/1; background:linear-gradient(135deg,var(--primary-light),#fff);
+                      display:flex; align-items:center; justify-content:center; font-size:34px;">🎮</div>
+          <div class="label">${p.name}</div>
+        </a>
+      `).join("");
+    } catch (err) {
+      grid.innerHTML = `<p style="color:var(--danger); padding:0 8px;">Couldn't load products: ${err.message}</p>`;
+    }
+  }
+  loadHomeProducts();
+</script>
+</body>
+</html>

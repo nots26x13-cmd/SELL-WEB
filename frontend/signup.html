@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sign up · S26X CODEX SHOP</title>
+<link rel="stylesheet" href="css/style.css" />
+<style>
+  .auth-shell { padding: 48px 20px 24px; }
+  .auth-brand { font-family: var(--font-display); font-weight:800; font-size:22px; color:var(--primary); text-align:center; margin-bottom:6px; }
+  .auth-brand small { display:block; font-size:12px; font-weight:600; letter-spacing:2px; color:var(--text-muted); }
+  .auth-card { background:var(--surface); border-radius:var(--radius-lg); box-shadow:var(--shadow-card); padding:24px 20px; margin-top:22px; }
+  .auth-title { font-family:var(--font-display); font-size:19px; font-weight:700; margin:0 0 4px; }
+  .auth-subtitle { color:var(--text-muted); font-size:13px; margin:0 0 18px; }
+  .auth-error { color:var(--danger); font-weight:600; font-size:13px; min-height:18px; margin-top:4px; }
+  .auth-switch { text-align:center; font-size:14px; color:var(--text-muted); margin-top:18px; }
+  .auth-switch a { color:var(--primary); font-weight:700; text-decoration:none; }
+</style>
+</head>
+<body>
+<div class="app-shell auth-shell">
+
+  <div class="auth-brand">S26X CODEX SHOP<small>TOP-UP STORE</small></div>
+
+  <div class="auth-card">
+    <h1 class="auth-title">Create your account</h1>
+    <p class="auth-subtitle">Track orders and top up your wallet from any device.</p>
+
+    <div class="field-label">Name</div>
+    <input class="text-input" id="name" type="text" placeholder="Your name" autocomplete="name" />
+
+    <div class="field-label">Email</div>
+    <input class="text-input" id="email" type="email" placeholder="you@example.com" autocomplete="email" />
+
+    <div class="field-label">Password</div>
+    <input class="text-input" id="password" type="password" placeholder="At least 6 characters" autocomplete="new-password" />
+
+    <div class="field-label">Confirm password</div>
+    <input class="text-input" id="confirmPassword" type="password" placeholder="Re-enter password" autocomplete="new-password" />
+
+    <div class="auth-error" id="formError"></div>
+
+    <button class="btn-primary" id="signupBtn">Sign up</button>
+  </div>
+
+  <div class="auth-switch">Already have an account? <a href="login.html">Log in</a></div>
+</div>
+
+<script>window.S26X_API_BASE_URL = "";</script>
+<script src="js/api.js"></script>
+<script>
+  const redirect = qs("redirect") || "index.html";
+  const errorEl = document.getElementById("formError");
+  const btn = document.getElementById("signupBtn");
+
+  async function doSignup() {
+    const name = document.getElementById("name").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+    const confirmPassword = document.getElementById("confirmPassword").value;
+    errorEl.textContent = "";
+
+    if (!name || !email || !password) {
+      errorEl.textContent = "Fill in all fields.";
+      return;
+    }
+    if (password.length < 6) {
+      errorEl.textContent = "Password must be at least 6 characters.";
+      return;
+    }
+    if (password !== confirmPassword) {
+      errorEl.textContent = "Passwords don't match.";
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = "Creating account…";
+    try {
+      await Api.signup(name, email, password);
+      window.location.href = redirect;
+    } catch (err) {
+      errorEl.textContent = err.message || "Could not create the account. Try again.";
+      btn.disabled = false;
+      btn.textContent = "Sign up";
+    }
+  }
+
+  btn.addEventListener("click", doSignup);
+  document.getElementById("confirmPassword").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") doSignup();
+  });
+</script>
+</body>
+</html>
