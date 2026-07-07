@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Add Fund · Arafat Codex</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div class="app-shell">
+
+  <header class="app-header">
+    <div class="brand">ARAFAT<br /><small>CODEX</small></div>
+    <div class="header-actions">
+      <a href="wallet.html" class="wallet-pill" id="walletPill">৳0</a>
+      <a href="account.html" class="avatar">A</a>
+    </div>
+  </header>
+
+  <div id="step1">
+    <div class="summary-box" style="background:linear-gradient(135deg, var(--primary), #9B5DE5);">
+      <div style="font-family:var(--font-display); font-size:16px; margin-bottom:4px;">Add money to wallet</div>
+      <div style="font-size:13px; opacity:.85;">Deposits are in USDT via Binance Pay, auto-verified.</div>
+    </div>
+
+    <div class="field-label">Deposit amount (USDT)</div>
+    <input class="text-input" id="amountInput" type="number" min="0.01" step="0.01" placeholder="0.00" />
+    <button class="btn-primary" id="proceedBtn">Proceed to add money →</button>
+  </div>
+
+  <div id="step2" style="display:none;">
+    <div class="section-title"><h2>Payment instructions</h2></div>
+    <div class="summary-box">
+      <div class="summary-row"><span>Send exactly</span><span id="sendAmount">-</span></div>
+      <div class="summary-row"><span>To Binance Pay ID</span><span id="payId">-</span></div>
+    </div>
+    <ol style="padding:0 34px 8px; color:var(--text-muted); font-size:14px;">
+      <li>Open Binance App → Pay</li>
+      <li>Send → Pay ID → enter the ID above</li>
+      <li>Send the exact USDT amount shown</li>
+      <li>Copy the Order ID (TxID) after it completes</li>
+    </ol>
+
+    <div class="field-label">Binance Pay Order ID (TxID)</div>
+    <input class="text-input" id="txIdInput" placeholder="Paste your TxID here" />
+    <button class="btn-primary" id="verifyBtn">Verify & credit wallet</button>
+    <div id="verifyResult" style="padding:6px 18px; font-weight:600;"></div>
+  </div>
+
+  <nav class="bottom-nav">
+    <a href="index.html">🏠<span>Home</span></a>
+    <a href="topup.html">📶<span>Topup</span></a>
+    <a href="orders.html">🧾<span>Orders</span></a>
+    <a href="account.html">👤<span>Account</span></a>
+  </nav>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+  let amount = 0;
+  const redirect = qs("redirect");
+
+  async function refreshBalance() {
+    const bal = await Api.getBalance(getCurrentUserId());
+    document.getElementById("walletPill").textContent = bdt(bal.wallet_balance);
+  }
+  refreshBalance();
+
+  document.getElementById("proceedBtn").addEventListener("click", async () => {
+    amount = parseFloat(document.getElementById("amountInput").value);
+    if (!amount || amount <= 0) return;
+    try {
+      const intent = await Api.createDepositIntent(getCurrentUserId(), amount);
+      document.getElementById("sendAmount").textContent = `${amount} USDT`;
+      document.getElementById("payId").textContent = intent.binance_pay_id;
+      document.getElementById("step1").style.display = "none";
+      document.getElementById("step2").style.display = "block";
+    } catch (err) {
+      alert(err.message);
+    }
+  });
+
+  document.getElementById("verifyBtn").addEventListener("click", async () => {
+    const txId = document.getElementById("txIdInput").value.trim();
+    const resultEl = document.getElementById("verifyResult");
+    if (!txId) { resultEl.textContent = "Enter your TxID"; resultEl.style.color = "var(--danger)"; return; }
+    resultEl.textContent = "Verifying with Binance…";
+    resultEl.style.color = "var(--text-muted)";
+    try {
+      const result = await Api.verifyBinanceDeposit(getCurrentUserId(), txId, amount);
+      resultEl.textContent = `✅ Credited ${result.received_amount_usdt} USDT from ${result.sender_name}. New balance: ${result.new_balance}`;
+      resultEl.style.color = "var(--success)";
+      await refreshBalance();
+      if (redirect) setTimeout(() => { window.location.href = `${redirect}?${window.location.search.slice(1)}`; }, 1200);
+    } catch (err) {
+      resultEl.textContent = `❌ ${err.message}`;
+      resultEl.style.color = "var(--danger)";
+    }
+  });
+</script>
+</body>
+</html>
